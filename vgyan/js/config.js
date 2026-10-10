@@ -5,22 +5,35 @@
 
 const config = {
     github: {
-        pat: "TAP", // Placeholder for GitHub Action
+        pat: "___TAP___", // Placeholder for GitHub Action replacement
         username: "chaurasia-prashant",
         repos: {
             users: "quiz_users",
             files: "quizFiles"
         }
     },
-    encryptionKey: "AUTHENC", // Placeholder for GitHub Action
-    isLoaded: true
+    encryptionKey: "___AUTHENC___", // Placeholder for GitHub Action replacement
+    isLoaded: false
 };
 
 /**
- * Initialization function (kept for compatibility)
+ * Initialization function to handle local development fallbacks
  */
 export async function initConfig() {
-    // In this version, values are injected directly into the file during deployment
+    if (config.isLoaded) return config;
+
+    // Try to load from localStorage if testing locally (overrides placeholders)
+    const localPat = localStorage.getItem('VGYAN_PAT');
+    if (localPat) {
+        config.github.pat = localPat;
+    }
+
+    const localKey = localStorage.getItem('VGYAN_KEY');
+    if (localKey) {
+        config.encryptionKey = localKey;
+    }
+
+    config.isLoaded = true;
     return config;
 }
 

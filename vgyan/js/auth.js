@@ -7,17 +7,22 @@ const loginForm = document.getElementById('loginForm');
 
 // Initialize and check session
 async function checkAuth() {
-    await initConfig();
-    if (localStorage.getItem('vgyan_session')) {
-        window.location.href = 'index.html';
-    } else {
-        document.body.style.visibility = 'visible';
+    try {
+        await initConfig();
+        if (localStorage.getItem('vgyan_session')) {
+            window.location.href = 'index.html';
+        } else {
+            document.body.style.visibility = 'visible';
+        }
+    } catch (e) {
+        console.error("Initialization error:", e);
     }
 }
 checkAuth();
 
 loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    // Trim and Lowercase for both sides (input handled here)
     const usernameInput = document.getElementById('loginUsername').value.trim().toLowerCase();
     const passwordInput = document.getElementById('loginPassword').value;
 
@@ -28,14 +33,13 @@ loginForm?.addEventListener('submit', async (e) => {
         btn.textContent = "Authenticating...";
         btn.disabled = true;
 
-        // Verify if PAT is present (for debugging local setup)
+        // Ensure we have a token (Local testing fallback)
         if (!config.github.pat || config.github.pat.startsWith('___')) {
-             // If local, check localStorage as a fallback for developer testing
              const localPat = localStorage.getItem('VGYAN_PAT');
              if (localPat) {
                  config.github.pat = localPat;
              } else {
-                 throw new Error("Missing GitHub PAT. Ensure Secrets are set in GitHub or provide local VGYAN_PAT.");
+                 throw new Error("GitHub Token (PAT) is missing. If testing locally, set 'VGYAN_PAT' in localStorage.");
              }
         }
 
@@ -43,33 +47,41 @@ loginForm?.addEventListener('submit', async (e) => {
         const users = await githubService.getFile(config.github.repos.users, "users.json");
 
         if (!Array.isArray(users)) {
-            throw new Error("Invalid users data received from GitHub.");
+            throw new Error("Invalid format for users.json - expected an array.");
         }
 
-        // 2. Find user (Case-Insensitive)
-        const user = users.find(u => u.username.toLowerCase() === usernameInput);
+        // 2. Find user (Case-Insensitive comparison on both sides)
+        const user = users.find(u => {
+            const storedUsername = (u.username || "").toString().toLowerCase();
+            return storedUsername === usernameInput;
+        });
 
         if (user) {
-            if (user.allow === "false" || user.allow === false) {
-                notify("Your account is disabled.");
+            // Check if account is allowed
+            const isAllowed = String(user.allow).toLowerCase() !== "false";
+
+            if (!isAllowed) {
+                notify("Account disabled by administrator.");
                 resetBtn(btn, originalText);
                 return;
             }
 
             // 3. Verify password via decryption
             try {
+                // The password in users.json is encrypted with the AUTHENC key
                 const decryptedPassword = await decryptData(user.password);
 
                 if (decryptedPassword === passwordInput) {
+                    // Login Success
                     const sessionData = {
                         username: user.username,
-                        access: String(user.access) === "true",
+                        access: String(user.access).toLowerCase() === "true",
                         loggedInAt: new Date().toISOString()
                     };
                     localStorage.setItem('vgyan_session', JSON.stringify(sessionData));
 
-                    // Update status
-                    updateLoginStatus(user.username, users).catch(console.error);
+                    // Update login status in the background
+                    updateLoginStatus(user.username, users).catch(err => console.warn("Status sync failed", err));
 
                     window.location.href = 'index.html';
                 } else {
@@ -77,8 +89,8 @@ loginForm?.addEventListener('submit', async (e) => {
                     resetBtn(btn, originalText);
                 }
             } catch (cryptoErr) {
-                console.error("Decryption error:", cryptoErr);
-                notify("Auth Error: Encryption key mismatch.");
+                console.error("Decryption failed:", cryptoErr);
+                notify("Authentication Error: Encryption key mismatch.");
                 resetBtn(btn, originalText);
             }
         } else {
@@ -86,8 +98,9 @@ loginForm?.addEventListener('submit', async (e) => {
             resetBtn(btn, originalText);
         }
     } catch (error) {
+        // Show specific error message from GitHub Service or logic
         notify(error.message || "Connection error. Check PAT.");
-        console.error(error);
+        console.error("Login Process Error:", error);
         resetBtn(btn, originalText);
     }
 });
@@ -98,18 +111,22 @@ function resetBtn(btn, text) {
 }
 
 async function updateLoginStatus(username, allUsers) {
-    const userIndex = allUsers.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
+    const userIndex = allUsers.findIndex(u => (u.username || "").toString().toLowerCase() === username.toLowerCase());
     if (userIndex === -1) return;
 
     allUsers[userIndex].isLogged = true;
     allUsers[userIndex].date = new Date().toISOString();
 
-    const metadata = await githubService.getFileMetadata(config.github.repos.users, "users.json");
-    await githubService.updateFile(
-        config.github.repos.users,
-        "users.json",
-        JSON.stringify(allUsers, null, 2),
-        `Login: ${username}`,
-        metadata.sha
-    );
+    try {
+        const metadata = await githubService.getFileMetadata(config.github.repos.users, "users.json");
+        await githubService.updateFile(
+            config.github.repos.users,
+            "users.json",
+            JSON.stringify(allUsers, null, 2),
+            `Login: ${username}`,
+            metadata.sha
+        );
+    } catch (e) {
+        console.warn("Could not update login status on GitHub:", e);
+    }
 }
