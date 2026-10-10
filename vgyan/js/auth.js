@@ -1,52 +1,39 @@
 import githubService from './github-service.js';
-import { sha256, notify } from './utils.js';
-import config from './config.js';
+import { notify } from './utils.js';
+import { decryptData } from './crypto.js';
+import config, { initConfig } from './config.js';
 
 const loginForm = document.getElementById('loginForm');
-const authError = document.getElementById('auth-error');
 
-// Note: Signup is disabled in this version as users are managed in the JSON file
-const signupFormSection = document.getElementById('signup-form');
-if (signupFormSection) {
-    signupFormSection.innerHTML = `
-        <h2>Access Restricted</h2>
-        <p>User registration is managed by the administrator. Please contact support if you need an account.</p>
-        <p class="switch-auth"><a href="#" id="showLogin">Back to Login</a></p>
-    `;
+// Initialize and check session
+async function checkAuth() {
+    await initConfig();
+    if (localStorage.getItem('vgyan_session')) {
+        window.location.href = 'index.html';
+    } else {
+        // Only show body once auth check is complete to prevent flickering
+        document.body.style.visibility = 'visible';
+    }
 }
-
-document.getElementById('showSignup')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('signup-form').style.display = 'block';
-});
-
-document.getElementById('showLogin')?.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('signup-form').style.display = 'none';
-    document.getElementById('login-form').style.display = 'block';
-});
+checkAuth();
 
 loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const usernameInput = document.getElementById('loginEmail').value; // Using existing ID for simplicity
+    const usernameInput = document.getElementById('loginUsername').value;
     const passwordInput = document.getElementById('loginPassword').value;
 
+    const btn = e.target.querySelector('button');
+    const originalText = btn.textContent;
+
     try {
-        // Show loading state
-        const btn = e.target.querySelector('button');
-        const originalText = btn.textContent;
         btn.textContent = "Authenticating...";
         btn.disabled = true;
 
-        // 1. Fetch users from GitHub
+        // 1. Fetch users from your GitHub repo (quiz_users)
         const users = await githubService.getFile(config.github.repos.users, "users.json");
 
-        // 2. Hash input password
-        const hashedInput = await sha256(passwordInput);
-
-        // 3. Find user
-        const user = users.find(u => u.username === usernameInput && u.password === hashedInput);
+        // 2. Find user by username
+        const user = users.find(u => u.username === usernameInput);
 
         if (user) {
             if (!user.allow) {
@@ -55,30 +42,40 @@ loginForm?.addEventListener('submit', async (e) => {
                 return;
             }
 
-            // Save user session locally
-            const sessionData = {
-                username: user.username,
-                access: user.access === "true" || user.access === true,
-                loggedInAt: new Date().toISOString()
-            };
-            localStorage.setItem('vgyan_session', JSON.stringify(sessionData));
-
-            // Optional: Update isLogged in GitHub repo (Requires PAT with Write access)
+            // 3. Verify password by decrypting the stored password using AUTHENC key
             try {
-                await updateLoginStatus(user.username, users);
-            } catch (err) {
-                console.warn("Could not update login status on server, but proceeding locally.");
-            }
+                const decryptedPassword = await decryptData(user.password);
 
-            window.location.href = 'index.html';
+                if (decryptedPassword === passwordInput) {
+                    // Success! Store session
+                    const sessionData = {
+                        username: user.username,
+                        access: String(user.access) === "true",
+                        loggedInAt: new Date().toISOString()
+                    };
+                    localStorage.setItem('vgyan_session', JSON.stringify(sessionData));
+
+                    // Update login status in the background
+                    updateLoginStatus(user.username, users).catch(console.error);
+
+                    window.location.href = 'index.html';
+                } else {
+                    notify("Invalid username or password.");
+                    resetBtn(btn, originalText);
+                }
+            } catch (cryptoErr) {
+                console.error("Decryption error:", cryptoErr);
+                notify("Auth Error: Encryption key mismatch or corrupted data.");
+                resetBtn(btn, originalText);
+            }
         } else {
             notify("Invalid username or password.");
             resetBtn(btn, originalText);
         }
     } catch (error) {
-        notify("Connection error. Check your PAT or Network.");
+        notify("Connection error. Check GitHub status or PAT.");
         console.error(error);
-        resetBtn(e.target.querySelector('button'), "Login");
+        resetBtn(btn, originalText);
     }
 });
 
@@ -102,9 +99,4 @@ async function updateLoginStatus(username, allUsers) {
         `Login update: ${username}`,
         metadata.sha
     );
-}
-
-// Check if already logged in
-if (localStorage.getItem('vgyan_session')) {
-    window.location.href = 'index.html';
 }
