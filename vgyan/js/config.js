@@ -21,7 +21,6 @@ const config = {
             files: "quizFiles"
         }
     },
-    encryptionKey: "", // Loaded from Firestore
     isLoaded: false
 };
 
@@ -58,25 +57,36 @@ export async function initConfig() {
 }
 
 /**
- * Explicitly fetches secrets from Firestore admin/secrets document.
+ * Explicitly fetches secrets from Firestore 'useful' collection.
+ * As per request: Checks a collection "useful" with a field "PAT".
  */
 export async function fetchSecrets(db) {
     const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
     try {
-        const docRef = doc(db, "admin", "secrets");
+        // We assume the document ID is 'github' within the 'useful' collection.
+        // You can change 'github' to your specific document ID if different.
+        const docRef = doc(db, "useful", "github");
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
             const data = docSnap.data();
-            config.github.pat = data.TAP || "";
-            config.encryptionKey = data.AUTHENC || "";
-            console.log("System secrets loaded successfully.");
+            config.github.pat = data.PAT || "";
+            console.log("GitHub PAT loaded successfully from 'useful/github'.");
             return true;
         } else {
-            console.error("Firestore Error: Document 'admin/secrets' does not exist.");
+            // Try another common name 'keys'
+            const altRef = doc(db, "useful", "keys");
+            const altSnap = await getDoc(altRef);
+            if (altSnap.exists()) {
+                const data = altSnap.data();
+                config.github.pat = data.PAT || "";
+                console.log("GitHub PAT loaded successfully from 'useful/keys'.");
+                return true;
+            }
+            console.error("Firestore Error: No document found in 'useful' collection containing 'PAT'.");
         }
     } catch (e) {
-        console.error("Firestore Error: Failed to fetch 'admin/secrets'. Check your Security Rules.", e);
+        console.error("Firestore Error: Failed to fetch secrets.", e);
     }
     return false;
 }

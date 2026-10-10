@@ -12,14 +12,14 @@ const signupFormDiv = document.getElementById('signup-form');
 
 async function checkAuth() {
     try {
-        await initConfig();
+        await initConfig(); // Initializes Firebase via config.js
         if (localStorage.getItem('vgyan_session')) {
             window.location.href = 'index.html';
         } else {
             document.body.style.visibility = 'visible';
         }
     } catch (e) {
-        console.error("Auth check failed:", e);
+        console.error("Initialization failed:", e);
         document.body.style.visibility = 'visible';
     }
 }
@@ -37,7 +37,7 @@ showLogin?.addEventListener('click', (e) => {
     loginFormDiv.style.display = 'block';
 });
 
-// Signup Process
+// Signup Process (Pure Firebase)
 signupForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('signupName').value.trim();
@@ -57,11 +57,13 @@ signupForm?.addEventListener('submit', async (e) => {
         await updateProfile(user, { displayName: name });
 
         // 3. Create User Document in Firestore
-        // isAccess is false by default
+        // This is the 'User Modal'
         await setDoc(doc(window.db, "users", user.uid), {
+            uid: user.uid,
             name: name,
             email: email,
-            isAccess: false,
+            isAccess: false, // Default: Admin must approve
+            role: "student",
             createdAt: new Date().toISOString()
         });
 
@@ -92,41 +94,41 @@ loginForm?.addEventListener('submit', async (e) => {
         const userCredential = await signInWithEmailAndPassword(window.auth, email, password);
         const user = userCredential.user;
 
-        // 2. Fetch User Permissions from Firestore
-        const userDoc = await getDoc(doc(window.db, "users", user.uid));
-        let isAccess = false;
-        let name = user.displayName || email.split('@')[0];
+        // 2. Load System Secrets (GitHub PAT) from Firestore
+        const secretsLoaded = await fetchSecrets(window.db);
+        if (!secretsLoaded) {
+            console.warn("Secure configuration (TAP) not found in Firestore. GitHub features may fail.");
+        }
 
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-            isAccess = userData.isAccess === true;
-            name = userData.name || name;
-        } else {
-            // If doc doesn't exist, create it (backwards compatibility for existing users)
-            await setDoc(doc(window.db, "users", user.uid), {
-                name: name,
+        // 3. Fetch User Permissions from Firestore
+        const userDoc = await getDoc(doc(window.db, "users", user.uid));
+        let userData = userDoc.exists() ? userDoc.data() : null;
+
+        // Auto-create doc if missing (for existing users)
+        if (!userData) {
+            userData = {
+                uid: user.uid,
+                name: user.displayName || email.split('@')[0],
                 email: user.email,
                 isAccess: false,
                 createdAt: new Date().toISOString()
-            });
+            };
+            await setDoc(doc(window.db, "users", user.uid), userData);
         }
-
-        // 3. Fetch GitHub Secrets (TAP/PAT) from Firestore admin/secrets
-        await fetchSecrets(window.db);
 
         // 4. Save Session
         const sessionData = {
             uid: user.uid,
-            name: name,
+            name: userData.name,
             email: user.email,
-            isAccess: isAccess,
+            isAccess: userData.isAccess === true,
             loggedInAt: new Date().toISOString()
         };
         localStorage.setItem('vgyan_session', JSON.stringify(sessionData));
 
         window.location.href = 'index.html';
     } catch (error) {
-        notify("Login failed: " + error.message);
+        notify(error.message);
         console.error("Login Error:", error);
     } finally {
         btn.textContent = "Login";
