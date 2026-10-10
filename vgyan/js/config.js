@@ -5,14 +5,14 @@
 
 const config = {
     github: {
-        pat: "___TAP___", // Placeholder for GitHub Action
+        pat: "TAP", // Placeholder for GitHub Action
         username: "chaurasia-prashant",
         repos: {
             users: "quiz_users",
             files: "quizFiles"
         }
     },
-    encryptionKey: "___AUTHENC___", // Placeholder for GitHub Action
+    encryptionKey: "AUTHENC", // Placeholder for GitHub Action
     isLoaded: true
 };
 
