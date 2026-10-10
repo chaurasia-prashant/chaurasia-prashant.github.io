@@ -1,76 +1,51 @@
-import { notify } from './utils.js';
+import config, { initConfig } from './config.js';
+import githubService from './github-service.js';
 
-document.addEventListener('DOMContentLoaded', () => {
-    const userNameElem = document.getElementById('userName');
-    const welcomeTextElem = document.getElementById('welcomeText');
-    const logoutBtn = document.getElementById('logoutBtn');
-    const loadingOverlay = document.getElementById('loading-overlay');
+async function initDashboard() {
+    try {
+        // 1. Initialize Config and Fetch secrets from Firestore
+        await initConfig();
 
-    // 1. Check Session
-    const session = JSON.parse(localStorage.getItem('vgyan_session'));
+        // 2. Verify Session
+        const session = JSON.parse(localStorage.getItem('vgyan_session'));
+        if (!session) {
+            window.location.href = 'auth.html';
+            return;
+        }
 
-    if (!session) {
-        window.location.href = 'auth.html';
-        return;
-    }
+        // 3. Update UI with user info
+        document.getElementById('userName').textContent = session.username || 'User';
+        document.getElementById('welcomeText').textContent = `Welcome back, ${session.username || 'Learner'}!`;
 
-    // 2. Setup UI
-    const displayName = session.username;
-    if (userNameElem) userNameElem.textContent = displayName;
-    if (welcomeTextElem) welcomeTextElem.textContent = `Welcome back, ${displayName}!`;
+        // Check for access
+        if (!session.access) {
+            document.querySelector('.dashboard-grid').innerHTML = `
+                <div class="tile full-width" style="grid-column: 1 / -1; cursor: default; text-align: center;">
+                    <div class="tile-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3>Access Pending</h3>
+                    <p>Your account is created, but you do not have access to the modules yet. Please contact the administrator.</p>
+                </div>
+            `;
+        }
 
-    // Hide loading overlay
-    if (loadingOverlay) loadingOverlay.style.display = 'none';
-
-    // 3. Apply Feature Restrictions based on "access"
-    const hasFullAccess = session.access === true || session.access === "true";
-
-    if (!hasFullAccess) {
-        // Restrict certain tiles
-        // Example: Only allow Reading and Results for restricted users
-        const restrictedTiles = ['Test Series', 'Mock Tests', 'Analytics'];
-        const tiles = document.querySelectorAll('.tile');
-
-        tiles.forEach(tile => {
-            const title = tile.querySelector('h3').innerText;
-            if (restrictedTiles.includes(title)) {
-                tile.classList.add('restricted');
-                tile.style.opacity = '0.6';
-                tile.style.cursor = 'not-allowed';
-                tile.title = "Access Restricted. Please upgrade your account.";
-
-                // Override click
-                tile.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    alert("This feature is restricted for your account level.");
-                };
-            }
+        // 4. Setup Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('vgyan_session');
+            window.auth?.signOut();
+            window.location.href = 'auth.html';
         });
+
+        // 5. Hide Loading Overlay
+        document.getElementById('loading-overlay').style.display = 'none';
+
+        console.log("Dashboard initialized with GitHub PAT:", config.github.pat ? "Loaded" : "Missing");
+
+    } catch (error) {
+        console.error("Dashboard init error:", error);
+        // Fallback or error UI
     }
+}
 
-    // 4. Logout logic
-    logoutBtn?.addEventListener('click', (e) => {
-        e.preventDefault();
-        localStorage.removeItem('vgyan_session');
-        window.location.href = 'auth.html';
-    });
-
-    // 5. Dashboard Animations
-    const cards = document.querySelectorAll('.tile');
-    cards.forEach((card, index) => {
-        card.style.opacity = '0';
-        card.style.transform = 'translateY(20px)';
-        card.style.transition = `all 0.5s ease ${index * 0.1}s`;
-
-        setTimeout(() => {
-            // Don't override the opacity if it was set for restricted tiles
-            if (!card.classList.contains('restricted')) {
-                card.style.opacity = '1';
-            } else {
-                card.style.opacity = '0.6';
-            }
-            card.style.transform = 'translateY(0)';
-        }, 100);
-    });
-});
+document.addEventListener('DOMContentLoaded', initDashboard);
