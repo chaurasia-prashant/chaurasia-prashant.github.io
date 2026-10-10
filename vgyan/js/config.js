@@ -6,12 +6,12 @@
 const config = {
     firebase: {
         apiKey: "AIzaSyBho6r-BmL-l2wGmgVmpEuyLqIX5WfP4Gc",
-          authDomain: "vgyan-89042.firebaseapp.com",
-          projectId: "vgyan-89042",
-          storageBucket: "vgyan-89042.firebasestorage.app",
-          messagingSenderId: "272031291148",
-          appId: "1:272031291148:web:e6f27289a0d882b9da9b29",
-          measurementId: "G-KDZJDM9BJM"
+        authDomain: "vgyan-89042.firebaseapp.com",
+        projectId: "vgyan-89042",
+        storageBucket: "vgyan-89042.firebasestorage.app",
+        messagingSenderId: "272031291148",
+        appId: "1:272031291148:web:e6f27289a0d882b9da9b29",
+        measurementId: "G-KDZJDM9BJM"
     },
     github: {
         pat: "", // Loaded from Firestore
@@ -70,10 +70,13 @@ export async function fetchSecrets(db) {
             const data = docSnap.data();
             config.github.pat = data.TAP || "";
             config.encryptionKey = data.AUTHENC || "";
+            console.log("System secrets loaded successfully.");
             return true;
+        } else {
+            console.error("Firestore Error: Document 'admin/secrets' does not exist.");
         }
     } catch (e) {
-        console.error("Error fetching secrets:", e);
+        console.error("Firestore Error: Failed to fetch 'admin/secrets'. Check your Security Rules.", e);
     }
     return false;
 }

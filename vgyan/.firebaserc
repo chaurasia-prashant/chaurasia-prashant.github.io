@@ -1,5 +1,11 @@
 {
   "projects": {
     "default": "vgyan-89042"
-  }
+  },
+  "targets": {
+    "vgyan-89042": {
+      "hosting": {}
+    }
+  },
+  "etags": {}
 }

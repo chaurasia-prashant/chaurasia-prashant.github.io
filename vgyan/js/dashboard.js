@@ -14,11 +14,11 @@ async function initDashboard() {
         }
 
         // 3. Update UI with user info
-        document.getElementById('userName').textContent = session.username || 'User';
-        document.getElementById('welcomeText').textContent = `Welcome back, ${session.username || 'Learner'}!`;
+        document.getElementById('userName').textContent = session.name || 'User';
+        document.getElementById('welcomeText').textContent = `Welcome back, ${session.name || 'Learner'}!`;
 
         // Check for access
-        if (!session.access) {
+        if (!session.isAccess) {
             document.querySelector('.dashboard-grid').innerHTML = `
                 <div class="tile full-width" style="grid-column: 1 / -1; cursor: default; text-align: center;">
                     <div class="tile-icon">
