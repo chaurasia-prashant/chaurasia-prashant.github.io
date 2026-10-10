@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vGyan - Quiz Dashboard</title>
+    <script>
+        // Immediate check to prevent flickering
+        if (!localStorage.getItem('vgyan_session')) {
+            window.location.href = 'auth.html';
+        }
+    </script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>v<span>Gyan</span></h1>
+            </div>
+            <div class="user-profile" id="userProfile">
+                <i class="fas fa-user-circle"></i>
+                <span id="userName">User</span>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </header>
+
+        <main>
+            <section class="welcome-section">
+                <h2 id="welcomeText">Welcome back!</h2>
+                <p>What would you like to do today?</p>
+            </section>
+
+            <div class="dashboard-grid">
+                <div class="tile card-test-series" onclick="location.href='#test-series'">
+                    <div class="tile-icon">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h3>Test Series</h3>
+                    <p>Comprehensive tests for your preparation</p>
+                    <div class="tile-footer">
+                        <span>Explore</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="tile card-reading" onclick="location.href='#reading'">
+                    <div class="tile-icon">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <h3>Reading</h3>
+                    <p>Study materials and resources</p>
+                    <div class="tile-footer">
+                        <span>Read Now</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="tile card-mock-tests" onclick="location.href='#mock-tests'">
+                    <div class="tile-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <h3>Mock Tests</h3>
+                    <p>Simulate real exam environments</p>
+                    <div class="tile-footer">
+                        <span>Take Test</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="tile card-results" onclick="location.href='#results'">
+                    <div class="tile-icon">
+                        <i class="fas fa-poll"></i>
+                    </div>
+                    <h3>Results</h3>
+                    <p>Check your performance history</p>
+                    <div class="tile-footer">
+                        <span>View All</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="tile card-analytics" onclick="location.href='#analytics'">
+                    <div class="tile-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Analytics</h3>
+                    <p>Detailed insights into your progress</p>
+                    <div class="tile-footer">
+                        <span>Analyze</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2023 vGyan Quiz App. All rights reserved.</p>
+        </footer>
+    </div>
+    <script type="module" src="js/dashboard.js"></script>
+</body>
+</html>

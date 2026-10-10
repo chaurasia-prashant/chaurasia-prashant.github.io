@@ -1,0 +1,9 @@
+# vGyan Secrets
+
+# IDE
+.idea/
+.vscode/
+
+# System
+.DS_Store
+Thumbs.db
