@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>vGyan - Quiz Dashboard</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+
     <div class="container">
         <header>
             <div class="logo">
@@ -16,7 +21,7 @@
             </div>
             <div class="user-profile" id="userProfile">
                 <i class="fas fa-user-circle"></i>
-                <span id="userName">Loading...</span>
+                <span id="userName">User</span>
                 <button id="logoutBtn" class="logout-btn">Logout</button>
             </div>
         </header>
@@ -28,26 +33,38 @@
             </section>
 
             <div class="dashboard-grid">
-                <div class="tile card-exams" onclick="location.href='#exams'">
+                <div class="tile card-test-series" onclick="location.href='#test-series'">
                     <div class="tile-icon">
-                        <i class="fas fa-file-alt"></i>
+                        <i class="fas fa-layer-group"></i>
                     </div>
-                    <h3>Exams</h3>
-                    <p>Challenge yourself with new quizzes</p>
+                    <h3>Test Series</h3>
+                    <p>Comprehensive tests for your preparation</p>
                     <div class="tile-footer">
                         <span>Explore</span>
                         <i class="fas fa-arrow-right"></i>
                     </div>
                 </div>
 
-                <div class="tile card-calculation" onclick="location.href='#calculation'">
+                <div class="tile card-reading" onclick="location.href='#reading'">
                     <div class="tile-icon">
-                        <i class="fas fa-calculator"></i>
+                        <i class="fas fa-book-open"></i>
                     </div>
-                    <h3>Calculation</h3>
-                    <p>Practice your mathematical skills</p>
+                    <h3>Reading</h3>
+                    <p>Study materials and resources</p>
                     <div class="tile-footer">
-                        <span>Practice</span>
+                        <span>Read Now</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="tile card-mock-tests" onclick="location.href='#mock-tests'">
+                    <div class="tile-icon">
+                        <i class="fas fa-laptop-code"></i>
+                    </div>
+                    <h3>Mock Tests</h3>
+                    <p>Simulate real exam environments</p>
+                    <div class="tile-footer">
+                        <span>Take Test</span>
                         <i class="fas fa-arrow-right"></i>
                     </div>
                 </div>
@@ -82,6 +99,6 @@
             <p>&copy; 2023 vGyan Quiz App. All rights reserved.</p>
         </footer>
     </div>
-    <script type="module" src="script.js"></script>
+    <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>
