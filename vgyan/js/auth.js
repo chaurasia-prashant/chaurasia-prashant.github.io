@@ -11,7 +11,6 @@ async function checkAuth() {
     if (localStorage.getItem('vgyan_session')) {
         window.location.href = 'index.html';
     } else {
-        // Only show body once auth check is complete to prevent flickering
         document.body.style.visibility = 'visible';
     }
 }
@@ -19,7 +18,7 @@ checkAuth();
 
 loginForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const usernameInput = document.getElementById('loginUsername').value;
+    const usernameInput = document.getElementById('loginUsername').value.trim().toLowerCase();
     const passwordInput = document.getElementById('loginPassword').value;
 
     const btn = e.target.querySelector('button');
@@ -29,25 +28,39 @@ loginForm?.addEventListener('submit', async (e) => {
         btn.textContent = "Authenticating...";
         btn.disabled = true;
 
-        // 1. Fetch users from your GitHub repo (quiz_users)
+        // Verify if PAT is present (for debugging local setup)
+        if (!config.github.pat || config.github.pat.startsWith('___')) {
+             // If local, check localStorage as a fallback for developer testing
+             const localPat = localStorage.getItem('VGYAN_PAT');
+             if (localPat) {
+                 config.github.pat = localPat;
+             } else {
+                 throw new Error("Missing GitHub PAT. Ensure Secrets are set in GitHub or provide local VGYAN_PAT.");
+             }
+        }
+
+        // 1. Fetch users from GitHub
         const users = await githubService.getFile(config.github.repos.users, "users.json");
 
-        // 2. Find user by username
-        const user = users.find(u => u.username === usernameInput);
+        if (!Array.isArray(users)) {
+            throw new Error("Invalid users data received from GitHub.");
+        }
+
+        // 2. Find user (Case-Insensitive)
+        const user = users.find(u => u.username.toLowerCase() === usernameInput);
 
         if (user) {
-            if (!user.allow) {
+            if (user.allow === "false" || user.allow === false) {
                 notify("Your account is disabled.");
                 resetBtn(btn, originalText);
                 return;
             }
 
-            // 3. Verify password by decrypting the stored password using AUTHENC key
+            // 3. Verify password via decryption
             try {
                 const decryptedPassword = await decryptData(user.password);
 
                 if (decryptedPassword === passwordInput) {
-                    // Success! Store session
                     const sessionData = {
                         username: user.username,
                         access: String(user.access) === "true",
@@ -55,7 +68,7 @@ loginForm?.addEventListener('submit', async (e) => {
                     };
                     localStorage.setItem('vgyan_session', JSON.stringify(sessionData));
 
-                    // Update login status in the background
+                    // Update status
                     updateLoginStatus(user.username, users).catch(console.error);
 
                     window.location.href = 'index.html';
@@ -65,7 +78,7 @@ loginForm?.addEventListener('submit', async (e) => {
                 }
             } catch (cryptoErr) {
                 console.error("Decryption error:", cryptoErr);
-                notify("Auth Error: Encryption key mismatch or corrupted data.");
+                notify("Auth Error: Encryption key mismatch.");
                 resetBtn(btn, originalText);
             }
         } else {
@@ -73,7 +86,7 @@ loginForm?.addEventListener('submit', async (e) => {
             resetBtn(btn, originalText);
         }
     } catch (error) {
-        notify("Connection error. Check GitHub status or PAT.");
+        notify(error.message || "Connection error. Check PAT.");
         console.error(error);
         resetBtn(btn, originalText);
     }
@@ -85,7 +98,7 @@ function resetBtn(btn, text) {
 }
 
 async function updateLoginStatus(username, allUsers) {
-    const userIndex = allUsers.findIndex(u => u.username === username);
+    const userIndex = allUsers.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
     if (userIndex === -1) return;
 
     allUsers[userIndex].isLogged = true;
@@ -96,7 +109,7 @@ async function updateLoginStatus(username, allUsers) {
         config.github.repos.users,
         "users.json",
         JSON.stringify(allUsers, null, 2),
-        `Login update: ${username}`,
+        `Login: ${username}`,
         metadata.sha
     );
 }
