@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>vGyan - Quiz Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <h1>v<span>Gyan</span></h1>
+            </div>
+            <div class="user-profile">
+                <i class="fas fa-user-circle"></i>
+                <span>Guest User</span>
+            </div>
+        </header>
+
+        <main>
+            <section class="welcome-section">
+                <h2>Welcome back, Explorer!</h2>
+                <p>What would you like to do today?</p>
+            </section>
+
+            <div class="dashboard-grid">
+                <div class="tile card-exams" onclick="location.href='#exams'">
+                    <div class="tile-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <h3>Exams</h3>
+                    <p>Challenge yourself with new quizzes</p>
+                    <div class="tile-footer">
+                        <span>Explore</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="tile card-calculation" onclick="location.href='#calculation'">
+                    <div class="tile-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <h3>Calculation</h3>
+                    <p>Practice your mathematical skills</p>
+                    <div class="tile-footer">
+                        <span>Practice</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="tile card-results" onclick="location.href='#results'">
+                    <div class="tile-icon">
+                        <i class="fas fa-poll"></i>
+                    </div>
+                    <h3>Results</h3>
+                    <p>Check your performance history</p>
+                    <div class="tile-footer">
+                        <span>View All</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+
+                <div class="tile card-analytics" onclick="location.href='#analytics'">
+                    <div class="tile-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3>Analytics</h3>
+                    <p>Detailed insights into your progress</p>
+                    <div class="tile-footer">
+                        <span>Analyze</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2023 vGyan Quiz App. All rights reserved.</p>
+        </footer>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
