@@ -14,15 +14,16 @@
             <div class="logo">
                 <h1>v<span>Gyan</span></h1>
             </div>
-            <div class="user-profile">
+            <div class="user-profile" id="userProfile">
                 <i class="fas fa-user-circle"></i>
-                <span>Guest User</span>
+                <span id="userName">Loading...</span>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
             </div>
         </header>
 
         <main>
             <section class="welcome-section">
-                <h2>Welcome back, Explorer!</h2>
+                <h2 id="welcomeText">Welcome back!</h2>
                 <p>What would you like to do today?</p>
             </section>
 
@@ -81,6 +82,6 @@
             <p>&copy; 2023 vGyan Quiz App. All rights reserved.</p>
         </footer>
     </div>
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>
